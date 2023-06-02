@@ -40,7 +40,7 @@ class PXS {
         this.#pxXY = pxXY.map(e => Math.round(e))
         this.#pxSize = pxSize
         this.canvas = document.getElementById(id)
-        this.#ctx = document.getElementById(id).getContext('2d')
+        this.#ctx = document.getElementById(id).getContext("2d", { willReadFrequently: true })
         this.options = this.#defaultOptions(options)
         this.width = (pxSize * pxXY[0]) + ((pxXY[0] - 1) * options.grid)
         this.height = (pxSize * pxXY[1]) + ((pxXY[1] - 1) * options.grid)
@@ -101,11 +101,26 @@ class PXS {
         }
     }
 
+    floodFill(pointXY , color = this.options.color) {
+        pointXY = pointXY.map(e => Math.round(e))
+        let oldG = [pointXY] , newG = [] , startColor = this.getPixelColor(pointXY)
+        while (!arraysEqual(oldG,[])) {
+            for (let i = 0 ;  i < oldG.length ; i++) {
+                for (let x = 0 ;  x < 8 ; x+=2) {
+                    let px = movePoint(oldG[i],x) , pxColor = this.getPixelColor(px)
+                    if (pxColor == startColor) {
+                    this.drawPixels([[...px,color]]) ; newG.push(px)}
+                }
+            }
+            oldG = [...newG] ; newG = []
+        }
+    } 
+
     getPixelColor(pointXY) {
         let Size = this.#pxSize,
             xyPos = this.#getPos(pointXY.map(e => Math.round(e))),
-            pixel = this.#ctx.getImageData(xyPos[0] + Size * .5, xyPos[1] + Size * .5, 1, 1).data
-        return `rgb(${pixel[0]},${pixel[1]},${pixel[2]})`
+            pixelData = this.#ctx.getImageData(xyPos[0] + Size * .5, xyPos[1] + Size * .5, 1, 1).data
+        return `rgb(${pixelData[0]},${pixelData[1]},${pixelData[2]})`
     }
 
     drawPixels(pixels) {
@@ -137,15 +152,15 @@ class PXS {
         this.drawFillRect([pointXY[0] + WH[0], pointXY[1]], [1, WH[1] + 1], color)
     }
 
-    drawLineDDA(point0, point1) {
-        point0 = point0.map(e => Math.round(e))
-        point1 = point1.map(e => Math.round(e))
+    drawLineDDA(start, end) {
+        start = start.map(e => Math.round(e))
+        end = end.map(e => Math.round(e))
         let points = [],
-            dx = point1[0] - point0[0],
-            dy = point1[1] - point0[1],
+            dx = end[0] - start[0],
+            dy = end[1] - start[1],
             steps = dx > dy ? Math.abs(dx) : Math.abs(dy),
             Xinc = dx / steps, Yinc = dy / steps,
-            X = point0[0], Y = point0[1]
+            X = start[0], Y = start[1]
         for (let i = 0; i <= steps; i++) {
             points.push([X, Y].map(xy => Math.round(xy)))
             X += Xinc
@@ -188,5 +203,11 @@ class PXS {
 }
 
 // test area
-let PXS1 = new PXS([30, 30], 15, "PXS", { grid: 2, mode: "paint" })
+let PXS1 = new PXS([15, 15], 10, "PXS", { grid: 2, mode: "paint" })
 PXS1.canvas.addEventListener("mouseenter", e => { PXS1.options.color = document.getElementById("color").value })
+
+//PXS1.drawCircleMidPoint([100,100],50)
+
+console.time("time ")
+PXS1.floodFill([0,0],"aqua")
+console.timeEnd("time ")
