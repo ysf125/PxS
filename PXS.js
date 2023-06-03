@@ -101,20 +101,19 @@ class PXS {
         }
     }
 
-    floodFill(pointXY , color = this.options.color) {
+    floodFill(pointXY, newColor = this.options.color) {
         pointXY = pointXY.map(e => Math.round(e))
-        let oldG = [pointXY] , newG = [] , startColor = this.getPixelColor(pointXY)
-        while (!arraysEqual(oldG,[])) {
-            for (let i = 0 ;  i < oldG.length ; i++) {
-                for (let x = 0 ;  x < 8 ; x+=2) {
-                    let px = movePoint(oldG[i],x) , pxColor = this.getPixelColor(px)
-                    if (pxColor == startColor) {
-                    this.drawPixels([[...px,color]]) ; newG.push(px)}
+        let oldG = [pointXY], newG = [], oldColor = this.getPixelColor(pointXY)
+        while (!arraysEqual(oldG, [])) {
+            for (let i = 0; i < oldG.length; i++) {
+                for (let x = 0; x < 8; x += 2) {
+                    let px = movePoint(oldG[i], x), pxColor = this.getPixelColor(px)
+                    if (pxColor == oldColor) { this.drawPixels([[...px, newColor]]); newG.push(px) }
                 }
             }
-            oldG = [...newG] ; newG = []
+            oldG = [...newG]; newG = []
         }
-    } 
+    }
 
     getPixelColor(pointXY) {
         let Size = this.#pxSize,
@@ -152,22 +151,25 @@ class PXS {
         this.drawFillRect([pointXY[0] + WH[0], pointXY[1]], [1, WH[1] + 1], color)
     }
 
-    drawLineDDA(start, end) {
-        start = start.map(e => Math.round(e))
-        end = end.map(e => Math.round(e))
-        let points = [],
-            dx = end[0] - start[0],
-            dy = end[1] - start[1],
-            steps = dx > dy ? Math.abs(dx) : Math.abs(dy),
-            Xinc = dx / steps, Yinc = dy / steps,
-            X = start[0], Y = start[1]
-        for (let i = 0; i <= steps; i++) {
-            points.push([X, Y].map(xy => Math.round(xy)))
-            X += Xinc
-            Y += Yinc
+    drawLineBresenhams(start , end , color = this.options.color) {
+        let dx = end[0] - start[0] ,
+            dy = end[1] - start[1] ,
+            x = start[0] , y = start[1] ,
+            p = 2 * dy - dx , points = []
+        while (x <= end[0]) {
+            if (p < 0) {
+                points.push([x,y])
+                x++ 
+                p = p + 2*dy
+            } else if (p >= 0) {
+                points.push([x,y])
+                x++ ; y++
+                p = p + 2*dy - 2*dx  
+            }
         }
-        this.drawPixels(points)
+        this.drawPixels(points.map(e => [...e , color]))
     }
+
 
     drawCircleMidPoint(pointXY, R, color = this.options.color) {
         pointXY = pointXY.map(e => Math.round(e)); R = Math.round(R)
@@ -203,11 +205,7 @@ class PXS {
 }
 
 // test area
-let PXS1 = new PXS([15, 15], 10, "PXS", { grid: 2, mode: "paint" })
+let PXS1 = new PXS([30, 30], 15, "PXS", { grid: 2, mode: "paint" })
 PXS1.canvas.addEventListener("mouseenter", e => { PXS1.options.color = document.getElementById("color").value })
 
-//PXS1.drawCircleMidPoint([100,100],50)
-
-console.time("time ")
-PXS1.floodFill([0,0],"aqua")
-console.timeEnd("time ")
+PXS1.drawLineBresenhams([5,5],[7,6])
