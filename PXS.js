@@ -1,8 +1,9 @@
-export { PXS, movePoint, randomNumber, arraysEqual, isMatrix, ObjectCombiner, mapMatrix }
+export { PXS, movePoint, randomNum, arraysEqual, isMatrix, ObjectCombiner, mapMatrix }
 
-function randomNumber(min, max) { return Math.round(Math.random() * (max - min) + min) }
+function randomNum(min, max) { return Math.round(Math.random() * (max - min) + min) }
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
 function isMatrix(a) { return Array.isArray(a[0]) && typeof a[0] !== 'string' ? true : false }
+function isNegativeNum(Num) { return Math.abs(Num) !== Num ? true : false }
 
 function mapMatrix(matrix, callBack) {
     let returnVal = [], array = []
@@ -124,8 +125,8 @@ class PXS {
 
     drawPixels(pixels) {
         let pxSize = this.#pxSize
+        pixels = pixels.map(e => !isNaN(e) ? Math.round(e) : e)
         for (let i = 0; i < pixels.length; i++) {
-            pixels[i] = pixels[i].map(e => !isNaN(e) ? Math.round(e) : e)
             let xy = this.#getPos(pixels[i])
             this.#ctx.fillStyle = pixels[i][2] !== undefined ? pixels[i][2] : this.options.color
             this.#ctx.fillRect(xy[0], xy[1], pxSize, pxSize)
@@ -137,10 +138,10 @@ class PXS {
         WH = WH.map(e => Math.round(e))
         let grid = this.options.grid
             , xy = this.#getPos(pointXY)
-            , x = grid !== 0 ? [(grid * WH[0] - grid), (grid * WH[1] - grid)] : [0, 0]
+            , z = grid !== 0 ? [(grid * WH[0] - grid), (grid * WH[1] - grid)] : [0, 0]
             , pxSize = this.#pxSize;
         this.#ctx.fillStyle = color
-        this.#ctx.fillRect(xy[0], xy[1], WH[0] * pxSize + x[0], WH[1] * pxSize + x[1])
+        this.#ctx.fillRect(xy[0], xy[1], WH[0] * pxSize + z[0], WH[1] * pxSize + z[1])
         grid !== 0 ? this.#drawGrid(pointXY, [pointXY[0] + WH[0], pointXY[1] + WH[1]]) : 0
     }
 
@@ -151,25 +152,19 @@ class PXS {
         this.drawFillRect([pointXY[0] + WH[0], pointXY[1]], [1, WH[1] + 1], color)
     }
 
-    drawLineBresenhams(start , end , color = this.options.color) {
-        let dx = end[0] - start[0] ,
-            dy = end[1] - start[1] ,
-            x = start[0] , y = start[1] ,
-            p = 2 * dy - dx , points = []
-        while (x <= end[0]) {
-            if (p < 0) {
-                points.push([x,y])
-                x++ 
-                p = p + 2*dy
-            } else if (p >= 0) {
-                points.push([x,y])
-                x++ ; y++
-                p = p + 2*dy - 2*dx  
-            }
+    drawLineMidPoint(start, end, color = this.options.color) {
+        start = start.map(e => Math.round(e))
+        end = end.map(e => Math.round(e))
+        let dx = end[0] - start[0], dy = end[1] - start[1],
+            D = 2 * dy - dx, dD = 2 * (dy - dx),
+            x = start[0], y = start[1], points = []
+        while (y <= end[1] && x <= end[0]) {
+            points.push([x, y])
+            x++
+            if (D < 0) { D = D + 2 * dy } else if (D >= 0) { y++; D = D + dD }
         }
-        this.drawPixels(points.map(e => [...e , color]))
+        this.drawPixels(points.map(e => [...e, color]))
     }
-
 
     drawCircleMidPoint(pointXY, R, color = this.options.color) {
         pointXY = pointXY.map(e => Math.round(e)); R = Math.round(R)
@@ -197,6 +192,10 @@ class PXS {
         }
     }
 
+    writeText(pointXY, text, color = this.options.color) {
+        //I didn't finish that yet
+    }
+
     restart() {
         this.#ctx.fillStyle = this.options.bg
         this.#ctx.fillRect(0, 0, this.width, this.height)
@@ -205,7 +204,7 @@ class PXS {
 }
 
 // test area
-let PXS1 = new PXS([30, 30], 15, "PXS", { grid: 2, mode: "paint" })
+let PXS1 = new PXS([20, 20], 15, "PXS", { grid: 2, mode: "paint" })
 PXS1.canvas.addEventListener("mouseenter", e => { PXS1.options.color = document.getElementById("color").value })
 
-PXS1.drawLineBresenhams([5,5],[7,6])
+PXS1.drawLineMidPoint([2, 8], [9, 11], "aqua")
