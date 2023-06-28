@@ -4,6 +4,8 @@ function randomNum(min, max) { return Math.round(Math.random() * (max - min) + m
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
 function isMatrix(a) { return Array.isArray(a[0]) && typeof a[0] !== 'string' ? true : false }
 function isNegativeNum(Num) { return Math.abs(Num) !== Num ? true : false }
+function D(pointXY0, pointXY1) { return Math.sqrt((pointXY1[0] - pointXY0[0]) ** 2 + (pointXY1[1] - pointXY0[1]) ** 2) }
+function slope(pointXY0, pointXY1) { return (pointXY1[1] - pointXY0[1]) / (pointXY1[0] - pointXY0[0]) }
 
 function mapMatrix(matrix, callBack) {
     let returnVal = [], array = []
@@ -24,51 +26,34 @@ function ObjectCombiner(keys, values) {
     } return returnVal
 }
 
-function movePoint(pointXY, dir, D = 1) {
-    let z = dir !== 2 && dir !== 6 ? 180 : 0
-        , deg = (90 - 45 * dir) % 360, radians = deg * (Math.PI / 180)
+function allPossibilities(items, spaces, repeat = false) {
+
+}
+
+function movePoint(pointXY, dir = 0, D = 1) {
+    let z = dir !== 0 && dir !== 4 ? 180 : 0
+        , deg = (0 - 45 * dir) % 360, radians = deg * (Math.PI / 180)
         , newX = pointXY[0] + (D * Math.cos(radians))
         , newY = pointXY[1] + (D * Math.sin(radians + z * (Math.PI / 180)))
     return [newX, newY].map(e => Math.round(e))
 }
 
+
 class PXS {
 
-    #pxXY; #pxSize; canvas; #ctx; width; height
-    // default options = { bg: "white" , color: "black" , grid: 0 , gridColor: "gray" , mode : "screen"}
-    // here in PXS class you can choose "screen" or "paint" as mode for your pixel screen
+    #pxXY; #pxSize; canvas; #ctx; #width; #height
+    // default options = { bg: "white" , color: "black" , grid: 0 , gridColor: "gray"}
     constructor(pxXY, pxSize, id, options) {
         this.#pxXY = pxXY.map(e => Math.round(e))
         this.#pxSize = pxSize
         this.canvas = document.getElementById(id)
         this.#ctx = document.getElementById(id).getContext("2d", { willReadFrequently: true })
         this.options = this.#defaultOptions(options)
-        this.width = (pxSize * pxXY[0]) + ((pxXY[0] - 1) * options.grid)
-        this.height = (pxSize * pxXY[1]) + ((pxXY[1] - 1) * options.grid)
-        this.canvas.setAttribute("width", this.width)
-        this.canvas.setAttribute("height", this.height)
+        this.#width = (pxSize * pxXY[0]) + ((pxXY[0] - 1) * options.grid)
+        this.#height = (pxSize * pxXY[1]) + ((pxXY[1] - 1) * options.grid)
+        this.canvas.setAttribute("width", this.#width)
+        this.canvas.setAttribute("height", this.#height)
         this.restart()
-        this.#paintMode()
-    }
-
-    #paintMode() {
-        if (this.options.mode.toLowerCase() == "paint") {
-            let isDrawing = false,
-                pxSize = this.#pxSize
-            this.canvas.addEventListener('mousedown', e => {
-                isDrawing = true
-                let xy = [e.offsetX, e.offsetY].map(XY => Math.floor(XY / (pxSize + this.options.grid)))
-                this.drawPixels([xy])
-
-                this.canvas.addEventListener('mousemove', e => {
-                    if (isDrawing === true) {
-                        let xy = [e.offsetX, e.offsetY].map(XY => Math.floor(XY / (pxSize + this.options.grid)))
-                        this.drawPixels([xy])
-                    }
-                })
-                document.addEventListener('mouseup', e => isDrawing === true ? isDrawing = false : 0)
-            })
-        }
     }
 
     #getPos(pointXY) {
@@ -79,7 +64,7 @@ class PXS {
     }
 
     #defaultOptions(options) {
-        let defaultOptions = { mode: "screen", bg: "white", color: "black", grid: 0, gridColor: "Gray" },
+        let defaultOptions = { bg: "white", color: "black", grid: 0, gridColor: "Gray" },
             keys = Object.keys(defaultOptions)
         for (let i = 0; i < keys.length; i++) {
             if (options[keys[i]] == undefined) {
@@ -89,16 +74,23 @@ class PXS {
         return options
     }
 
-    #drawGrid(start = [0, 0], end = this.#pxXY) {
+    #drawGrid(pointXY0 = [0, 0], pointXY1 = this.#pxXY) {
         let grid = this.options.grid
         this.#ctx.fillStyle = this.options.gridColor
-        for (let i = start[0]; i < end[0]; i++) {
+        for (let i = pointXY0[0]; i < pointXY1[0]; i++) {
             let z = i == 0 ? this.#pxSize : (this.#pxSize * (i + 1)) + (grid * i)
-            this.#ctx.fillRect(z, 0, grid, this.height)
+            this.#ctx.fillRect(z, 0, grid, this.#height)
         }
-        for (let x = start[1]; x < end[1]; x++) {
+        for (let x = pointXY0[1]; x < pointXY1[1]; x++) {
             let z = x == 0 ? this.#pxSize : (this.#pxSize * (x + 1)) + (grid * x)
-            this.#ctx.fillRect(0, z, this.width, grid)
+            this.#ctx.fillRect(0, z, this.#width, grid)
+        }
+    }
+
+    get allCanvesData() {
+        return {
+            pxXY: this.#pxXY, pxSize: this.#pxSize, canvas: this.canvas, ctx: this.#ctx,
+            options: this.options, width: this.#width, height: this.#height
         }
     }
 
@@ -152,13 +144,16 @@ class PXS {
         this.drawFillRect([pointXY[0] + WH[0], pointXY[1]], [1, WH[1] + 1], color)
     }
 
-    drawLineMidPoint(start, end, color = this.options.color) {
-        start = start.map(e => Math.round(e))
-        end = end.map(e => Math.round(e))
-        let dx = end[0] - start[0], dy = end[1] - start[1],
+    drawLineMidPoint(pointXY0, pointXY1, color = this.options.color) {
+
+        //working here        
+
+        pointXY0 = pointXY0.map(e => Math.round(e))
+        pointXY1 = pointXY1.map(e => Math.round(e))
+        let dx = pointXY1[0] - pointXY0[0], dy = pointXY1[1] - pointXY0[1],
             D = 2 * dy - dx, dD = 2 * (dy - dx),
-            x = start[0], y = start[1], points = []
-        while (y <= end[1] && x <= end[0]) {
+            x = pointXY0[0], y = pointXY0[1], points = []
+        while (y <= pointXY1[1] && x <= pointXY1[0]) {
             points.push([x, y])
             x++
             if (D < 0) { D = D + 2 * dy } else if (D >= 0) { y++; D = D + dD }
@@ -192,19 +187,18 @@ class PXS {
         }
     }
 
-    writeText(pointXY, text, color = this.options.color) {
-        //I didn't finish that yet
-    }
-
     restart() {
         this.#ctx.fillStyle = this.options.bg
-        this.#ctx.fillRect(0, 0, this.width, this.height)
+        this.#ctx.fillRect(0, 0, this.#width, this.#height)
         this.options.grid !== 0 ? this.#drawGrid() : 0
     }
 }
 
 // test area
-let PXS1 = new PXS([20, 20], 15, "PXS", { grid: 2, mode: "paint" })
-PXS1.canvas.addEventListener("mouseenter", e => { PXS1.options.color = document.getElementById("color").value })
+let PXS1 = new PXS([20, 20], 15, "PXS", { grid: 2 })
 
-PXS1.drawLineMidPoint([2, 8], [9, 11], "aqua")
+let getOctet = (pointXY0, pointXY1) => {
+
+}
+
+console.log(getOctet([3, 2], [0, 4]))
