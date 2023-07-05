@@ -1,4 +1,7 @@
-export { PXS, movePoint, randomNum, arraysEqual, isMatrix, ObjectCombiner, mapMatrix }
+export {
+    PXS, movePoint, randomNum, arraysEqual, isMatrix, ObjectCombiner, isNegativeNum, D,
+    slope, midPoint
+}
 
 function randomNum(min, max) { return Math.round(Math.random() * (max - min) + min) }
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
@@ -6,18 +9,7 @@ function isMatrix(a) { return Array.isArray(a[0]) && typeof a[0] !== 'string' ? 
 function isNegativeNum(Num) { return Math.abs(Num) !== Num ? true : false }
 function D(pointXY0, pointXY1) { return Math.sqrt((pointXY1[0] - pointXY0[0]) ** 2 + (pointXY1[1] - pointXY0[1]) ** 2) }
 function slope(pointXY0, pointXY1) { return (pointXY1[1] - pointXY0[1]) / (pointXY1[0] - pointXY0[0]) }
-
-function mapMatrix(matrix, callBack) {
-    let returnVal = [], array = []
-    globalThis.OUT = 0; globalThis.IN = 0
-    for (OUT = 0; OUT < matrix.length; OUT++) {
-        for (IN = 0; IN < matrix[OUT].length; IN++) {
-            array.push(callBack(matrix[OUT][IN]))
-        }
-        returnVal.push(array); array = []
-    }
-    return returnVal
-}
+function midPoint(pointXY0, pointXY1) { return [(pointXY0[0] + pointXY1[0]) / 2, ((pointXY0[1] + pointXY1[1])) / 2] }
 
 function ObjectCombiner(keys, values) {
     let returnVal = {}
@@ -30,14 +22,12 @@ function allPossibilities(items, spaces, repeat = false) {
 
 }
 
-function movePoint(pointXY, dir = 0, D = 1) {
-    let z = dir !== 0 && dir !== 4 ? 180 : 0
-        , deg = (0 - 45 * dir) % 360, radians = deg * (Math.PI / 180)
-        , newX = pointXY[0] + (D * Math.cos(radians))
-        , newY = pointXY[1] + (D * Math.sin(radians + z * (Math.PI / 180)))
-    return [newX, newY].map(e => Math.round(e))
+function movePoint(pointXY, dir, D = 1) {
+    let rad = (360 + 45 * dir) % 360 * (Math.PI / 180)
+        , x = pointXY[0] + (D * Math.round(Math.cos(rad)))
+        , y = pointXY[1] + (D * Math.round(Math.sin(rad)))
+    return [x, y]
 }
-
 
 class PXS {
 
