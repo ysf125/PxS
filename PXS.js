@@ -64,17 +64,20 @@ class PXS {
         return options
     }
 
-    #drawGrid(pointXY0 = [0, 0], pointXY1 = this.#pxXY) {
-        let grid = this.options.grid
-        this.#ctx.fillStyle = this.options.gridColor
-        for (let i = pointXY0[0]; i < pointXY1[0]; i++) {
-            let z = i == 0 ? this.#pxSize : (this.#pxSize * (i + 1)) + (grid * i)
-            this.#ctx.fillRect(z, 0, grid, this.#height)
+    ChangePointOctet(pointXY0, pointXY1, octetNum) {
+        let dx = Math.abs(pointXY1[0] - pointXY0[0]),
+            dy = Math.abs(pointXY1[1] - pointXY0[1]), pointXY = []
+        switch (octetNum % 8) {
+            case 0: pointXY = [pointXY0[0] + dx, pointXY0[1] + dy]; break
+            case 1: pointXY = [pointXY0[0] + dy, pointXY0[1] + dx]; break
+            case 2: pointXY = [pointXY0[0] - dy, pointXY0[1] + dx]; break
+            case 3: pointXY = [pointXY0[0] - dx, pointXY0[1] + dy]; break
+            case 4: pointXY = [pointXY0[0] - dx, pointXY0[1] - dy]; break
+            case 5: pointXY = [pointXY0[0] - dy, pointXY0[1] - dx]; break
+            case 6: pointXY = [pointXY0[0] + dy, pointXY0[1] - dx]; break
+            case 7: pointXY = [pointXY0[0] + dx, pointXY0[1] - dy]; break
         }
-        for (let x = pointXY0[1]; x < pointXY1[1]; x++) {
-            let z = x == 0 ? this.#pxSize : (this.#pxSize * (x + 1)) + (grid * x)
-            this.#ctx.fillRect(0, z, this.#width, grid)
-        }
+        return pointXY
     }
 
     get allCanvesData() {
@@ -105,6 +108,19 @@ class PXS {
         return `rgb(${pixelData[0]},${pixelData[1]},${pixelData[2]})`
     }
 
+    drawGrid(pointXY0 = [0, 0], pointXY1 = this.#pxXY) {
+        let grid = this.options.grid
+        this.#ctx.fillStyle = this.options.gridColor
+        for (let i = pointXY0[0]; i < pointXY1[0]; i++) {
+            let z = i == 0 ? this.#pxSize : (this.#pxSize * (i + 1)) + (grid * i)
+            this.#ctx.fillRect(z, 0, grid, this.#height)
+        }
+        for (let x = pointXY0[1]; x < pointXY1[1]; x++) {
+            let z = x == 0 ? this.#pxSize : (this.#pxSize * (x + 1)) + (grid * x)
+            this.#ctx.fillRect(0, z, this.#width, grid)
+        }
+    }
+
     drawPixels(pixels) {
         let pxSize = this.#pxSize
         pixels = pixels.map(e => !isNaN(e) ? Math.round(e) : e)
@@ -124,7 +140,7 @@ class PXS {
             , pxSize = this.#pxSize;
         this.#ctx.fillStyle = color
         this.#ctx.fillRect(xy[0], xy[1], WH[0] * pxSize + z[0], WH[1] * pxSize + z[1])
-        grid !== 0 ? this.#drawGrid(pointXY, [pointXY[0] + WH[0], pointXY[1] + WH[1]]) : 0
+        grid !== 0 ? this.drawGrid(pointXY, [pointXY[0] + WH[0], pointXY[1] + WH[1]]) : 0
     }
 
     drawRect(pointXY, WH, color = this.options.color) {
@@ -153,18 +169,12 @@ class PXS {
 
     drawCircleMidPoint(pointXY, R, color = this.options.color) {
         pointXY = pointXY.map(e => Math.round(e)); R = Math.round(R)
-        function drawAll8Points(xy) {
-            let points = [], x = xy[0], y = xy[1]
-            points.push([x, y]); points.push([-x, y])
-            points.push([x, -y]); points.push([-x, -y])
-            points.push([y, x]); points.push([-y, x])
-            points.push([y, -x]); points.push([-y, -x])
-            points = points.map(e => [e[0] + pointXY[0], e[1] + pointXY[1], color])
-            PXS1.drawPixels(points)
-        }
-
         let x = 0, y = R, p = 1 - R
-        drawAll8Points([x, y])
+
+        for (let i = 0; i < 8; i++) {
+            let point = this.ChangePointOctet(pointXY, [x + pointXY[0], y + pointXY[1]], i)
+            this.drawPixels([[point[0], point[1], color]])
+        }
         while (x <= y) {
             x += 1
             if (p < 0) {
@@ -173,22 +183,30 @@ class PXS {
                 y -= 1
                 p = p - 2 * y + 2 * x + 1
             }
-            drawAll8Points([x, y])
+            for (let i = 0; i < 8; i++) {
+                let point = this.ChangePointOctet(pointXY, [x + pointXY[0], y + pointXY[1]], i)
+                this.drawPixels([[point[0], point[1], color]])
+            }
         }
     }
 
     restart() {
         this.#ctx.fillStyle = this.options.bg
         this.#ctx.fillRect(0, 0, this.#width, this.#height)
-        this.options.grid !== 0 ? this.#drawGrid() : 0
+        this.options.grid !== 0 ? this.drawGrid() : 0
     }
 }
 
-// test area
+// working area
 let PXS1 = new PXS([20, 20], 15, "PXS", { grid: 2 })
 
 let getOctet = (pointXY0, pointXY1) => {
-
+    let N = Number.MAX_SAFE_INTEGER, closestPoint = [N, 0]
+        , points = Array(8).fill(pointXY0).map((e, i) => movePoint(e, i, N / 10))
+    points = points.map((e, i) => midPoint(e, points[(i + 1) % 8]))
+    points.forEach((e, i) => D(e, pointXY1) < closestPoint[0] ? closestPoint = [D(e, pointXY1), i] : 0)
+    return closestPoint
 }
 
-console.log(getOctet([3, 2], [0, 4]))
+//console.log(PXS1.ChangePointOctet([3, 3], [5, 3], 1))
+PXS1.drawCircleMidPoint([7, 7], 7, "red")
