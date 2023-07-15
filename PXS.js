@@ -1,5 +1,5 @@
 export {
-    PXS, movePoint, randomNum, arraysEqual, isMatrix, ObjectCombiner, isNegativeNum, D,
+    PXS, movePoint, randomNum, arraysEqual, isMatrix, ObjectCombiner, isNegativeNum, distance,
     slope, midPoint
 }
 
@@ -7,9 +7,9 @@ function randomNum(min, max) { return Math.round(Math.random() * (max - min) + m
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
 function isMatrix(a) { return Array.isArray(a[0]) && typeof a[0] !== 'string' ? true : false }
 function isNegativeNum(Num) { return Math.abs(Num) !== Num ? true : false }
-function D(pointXY0, pointXY1) { return Math.sqrt((pointXY1[0] - pointXY0[0]) ** 2 + (pointXY1[1] - pointXY0[1]) ** 2) }
 function slope(pointXY0, pointXY1) { return (pointXY1[1] - pointXY0[1]) / (pointXY1[0] - pointXY0[0]) }
 function midPoint(pointXY0, pointXY1) { return [(pointXY0[0] + pointXY1[0]) / 2, ((pointXY0[1] + pointXY1[1])) / 2] }
+function distance(pointXY0, pointXY1) { return Math.sqrt((pointXY1[0] - pointXY0[0]) ** 2 + (pointXY1[1] - pointXY0[1]) ** 2) }
 
 function ObjectCombiner(keys, values) {
     let returnVal = {}
@@ -64,7 +64,7 @@ class PXS {
         return options
     }
 
-    ChangePointOctet(pointXY0, pointXY1, octetNum) {
+    #ChangePointOctet(pointXY0, pointXY1, octetNum) {
         let dx = Math.abs(pointXY1[0] - pointXY0[0]),
             dy = Math.abs(pointXY1[1] - pointXY0[1]), pointXY = []
         switch (octetNum % 8) {
@@ -78,6 +78,13 @@ class PXS {
             case 7: pointXY = [pointXY0[0] + dx, pointXY0[1] - dy]; break
         }
         return pointXY
+    }
+
+    
+    restart() {
+        this.#ctx.fillStyle = this.options.bg
+        this.#ctx.fillRect(0, 0, this.#width, this.#height)
+        this.options.grid !== 0 ? this.drawGrid() : 0
     }
 
     get allCanvesData() {
@@ -151,20 +158,26 @@ class PXS {
     }
 
     drawLineMidPoint(pointXY0, pointXY1, color = this.options.color) {
-
-        //working here        
-
         pointXY0 = pointXY0.map(e => Math.round(e))
         pointXY1 = pointXY1.map(e => Math.round(e))
+        function getOctet(pointXY0, pointXY1) {
+            let N = 10**9, closestPoint = [N, 0]
+                , points = Array(8).fill(pointXY0).map((e, i) => movePoint(e, i, N / 2))
+            points = points.map((e, i) => midPoint(e, points[(i + 1) % 8]))
+            points.forEach((e, i) => distance(e, pointXY1) < closestPoint[0] ? closestPoint = [distance(e, pointXY1), i] : 0)
+            return closestPoint[1]
+        }
+        let octetNum = getOctet(pointXY0,pointXY1)
+        pointXY1 = this.#ChangePointOctet(pointXY0,pointXY1,0)        
+
         let dx = pointXY1[0] - pointXY0[0], dy = pointXY1[1] - pointXY0[1],
             D = 2 * dy - dx, dD = 2 * (dy - dx),
-            x = pointXY0[0], y = pointXY0[1], points = []
-        while (y <= pointXY1[1] && x <= pointXY1[0]) {
-            points.push([x, y])
+            x = pointXY0[0], y = pointXY0[1]
+        while (x <= pointXY1[0]) {
+            this.drawPixels([[...this.#ChangePointOctet(pointXY0,[x,y],octetNum),color]])
             x++
             if (D < 0) { D = D + 2 * dy } else if (D >= 0) { y++; D = D + dD }
         }
-        this.drawPixels(points.map(e => [...e, color]))
     }
 
     drawCircleMidPoint(pointXY, R, color = this.options.color) {
@@ -172,7 +185,7 @@ class PXS {
         let x = 0, y = R, p = 1 - R
 
         for (let i = 0; i < 8; i++) {
-            let point = this.ChangePointOctet(pointXY, [x + pointXY[0], y + pointXY[1]], i)
+            let point = this.#ChangePointOctet(pointXY, [x + pointXY[0], y + pointXY[1]], i)
             this.drawPixels([[point[0], point[1], color]])
         }
         while (x <= y) {
@@ -184,29 +197,14 @@ class PXS {
                 p = p - 2 * y + 2 * x + 1
             }
             for (let i = 0; i < 8; i++) {
-                let point = this.ChangePointOctet(pointXY, [x + pointXY[0], y + pointXY[1]], i)
+                let point = this.#ChangePointOctet(pointXY, [x + pointXY[0], y + pointXY[1]], i)
                 this.drawPixels([[point[0], point[1], color]])
             }
         }
     }
 
-    restart() {
-        this.#ctx.fillStyle = this.options.bg
-        this.#ctx.fillRect(0, 0, this.#width, this.#height)
-        this.options.grid !== 0 ? this.drawGrid() : 0
-    }
 }
 
 // working area
-let PXS1 = new PXS([20, 20], 15, "PXS", { grid: 2 })
+let PXS1 = new PXS([32, 32], 13, "PXS", { grid: 1.4 })
 
-let getOctet = (pointXY0, pointXY1) => {
-    let N = Number.MAX_SAFE_INTEGER, closestPoint = [N, 0]
-        , points = Array(8).fill(pointXY0).map((e, i) => movePoint(e, i, N / 10))
-    points = points.map((e, i) => midPoint(e, points[(i + 1) % 8]))
-    points.forEach((e, i) => D(e, pointXY1) < closestPoint[0] ? closestPoint = [D(e, pointXY1), i] : 0)
-    return closestPoint
-}
-
-//console.log(PXS1.ChangePointOctet([3, 3], [5, 3], 1))
-PXS1.drawCircleMidPoint([7, 7], 7, "red")
