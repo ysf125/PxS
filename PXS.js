@@ -1,7 +1,4 @@
-export {
-    PXS, movePoint, randomNum, arraysEqual, isMatrix, ObjectCombiner, isNegativeNum, distance,
-    slope, midPoint
-}
+export {PXS, movePoint}
 
 function randomNum(min, max) { return Math.round(Math.random() * (max - min) + min) }
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
@@ -16,10 +13,6 @@ function ObjectCombiner(keys, values) {
     for (let i = 0; i < keys.length; i++) {
         returnVal[keys[i]] = values[i]
     } return returnVal
-}
-
-function allPossibilities(items, spaces, repeat = false) {
-
 }
 
 function movePoint(pointXY, dir, D = 1) {
@@ -197,7 +190,6 @@ class PXS {
                 , points = Array(8).fill(pointXY0).map((e, i) => movePoint(e, i, N / 2))
             points = points.map((e, i) => midPoint(e, points[(i + 1) % 8]))
             points.forEach((e, i) => distance(e, pointXY1) < closestPoint[0] ? closestPoint = [distance(e, pointXY1), i] : 0)
-            console.log(closestPoint[1])
             return closestPoint[1]
         }
         let octetNum = getOctet(pointXY0, pointXY1)
