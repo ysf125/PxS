@@ -1,4 +1,4 @@
-export {PXS, movePoint}
+export { PxS as PXS, movePoint }
 
 function randomNum(min, max) { return Math.round(Math.random() * (max - min) + min) }
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
@@ -22,12 +22,12 @@ function movePoint(pointXY, dir, D = 1) {
     return [x, y]
 }
 
-class PXS {
+class PxS {
 
     #pxXY; #pxSize; #ctx; #width; #height; #pixelsData; #canvas
     // default options = { bg: "white" , color: "black" , grid: 0 , gridColor: "gray"}
     constructor(pxXY, pxSize, id, options) {
-        this.options = this.#defaultOptions(options)
+        this.options = this.#defaultOptions(options, { bg: "white", color: "black", grid: 0, gridColor: "Gray" })
         this.#canvas = document.getElementById(id)
         this.#pxXY = pxXY.map(e => Math.round(e))
         this.#pxSize = pxSize
@@ -45,9 +45,8 @@ class PXS {
         return [x, y]
     }
 
-    #defaultOptions(options) {
-        let defaultOptions = { bg: "white", color: "black", grid: 0, gridColor: "Gray" },
-            keys = Object.keys(defaultOptions)
+    #defaultOptions(options, defaultOptions) {
+        let keys = Object.keys(defaultOptions)
         for (let i = 0; i < keys.length; i++) {
             if (options[keys[i]] == undefined) {
                 options[keys[i]] = defaultOptions[keys[i]]
@@ -162,10 +161,14 @@ class PXS {
     }
 
     drawRect(pointXY, WH, color = this.options.color, fill = false) {
-        if (WH[0] < 0 || WH[1] < 0) { console.error("you can't use negative numbers in WH :", WH); return }
+        pointXY = pointXY.map(e => Math.round(e))
+        WH = WH.map(e => Math.round(e))
+        if (WH[0] < 0 || WH[1] < 0) {
+            if (WH[0] < 0) { pointXY[0] = pointXY[0] + (WH[0] + 1) }
+            if (WH[1] < 0) { pointXY[1] = pointXY[1] + (WH[1] + 1) }
+            WH = WH.map(e => Math.abs(e))
+        }
         if (fill == true) {
-            pointXY = pointXY.map(e => Math.round(e))
-            WH = WH.map(e => Math.round(e))
             let grid = this.options.grid
                 , xy = this.#getPos(pointXY)
                 , z = grid !== 0 ? [(grid * WH[0] - grid), (grid * WH[1] - grid)] : [0, 0]
@@ -177,8 +180,8 @@ class PXS {
         } else {
             this.drawRect(pointXY, [WH[0], 1], color, true)
             this.drawRect(pointXY, [1, WH[1]], color, true)
-            this.drawRect([pointXY[0], pointXY[1] + WH[1]], [WH[0] + 1, 1], color, true)
-            this.drawRect([pointXY[0] + WH[0], pointXY[1]], [1, WH[1] + 1], color, true)
+            this.drawRect([pointXY[0], pointXY[1] + WH[1] - 1], [WH[0], 1], color, true)
+            this.drawRect([pointXY[0] + WH[0] - 1, pointXY[1]], [1, WH[1]], color, true)
         }
     }
 
@@ -208,7 +211,6 @@ class PXS {
     drawCircle(pointXY, R, color = this.options.color, fill = false) {
         pointXY = pointXY.map(e => Math.round(e)); R = Math.round(R)
         let x = 0, y = R, p = 1 - R
-
         for (let i = 0; i < 8; i++) {
             let point = this.#ChangePointOctet(pointXY, [x + pointXY[0], y + pointXY[1]], i)
             this.drawPixels([[point[0], point[1], color]])
@@ -232,5 +234,5 @@ class PXS {
 }
 
 // working area
-let PXS1 = new PXS([16, 16], 20, "PXS", { grid: 1.5 })
+let PxS1 = new PxS([16, 16], 20, "PXS", { grid: 1 })
 
