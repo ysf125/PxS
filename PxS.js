@@ -1,4 +1,4 @@
-export { PxS as PXS, movePoint }
+export { PxS , movePoint }
 
 function randomNum(min, max) { return Math.round(Math.random() * (max - min) + min) }
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
@@ -234,5 +234,5 @@ class PxS {
 }
 
 // working area
-let PxS1 = new PxS([16, 16], 20, "PXS", { grid: 1 })
+let PxS1 = new PxS([16, 16], 20, "PxS", { grid: 1 })
 
