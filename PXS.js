@@ -262,4 +262,3 @@ class PxS {
 
 // working area
 let PxS1 = new PxS([16, 16], 20, "PxS", { grid: 1 })
-
