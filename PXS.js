@@ -1,4 +1,4 @@
-export { PxS as PXS, movePoint }
+export { PxS, movePoint }
 
 function randomNum(min, max) { return Math.round(Math.random() * (max - min) + min) }
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
@@ -24,10 +24,10 @@ function movePoint(pointXY, dir, D = 1) {
 
 class PxS {
 
-    #pxXY; #pxSize; #ctx; #width; #height; #pixelsData; #canvas
-    // default options = { bg: "white" , color: "black" , grid: 0 , gridColor: "gray"}
-    constructor(pxXY, pxSize, id, options) {
-        this.options = this.#defaultOptions(options, { bg: "white", color: "black", grid: 0, gridColor: "Gray" })
+    #pxXY; #pxSize; #ctx; #width; #height; #pixelsData; #canvas; #colorDictionary
+    // default options = { bg: "white" , color: "black" , grid: 0 , gridColor: "gray" , correctInput : true }
+    constructor(pxXY, pxSize, id, options = { bg: "white", color: "black", grid: 0, gridColor: "Gray", correctInput: true }) {
+        this.options = this.#defaultOptions(options, { bg: "white", color: "black", grid: 0, gridColor: "Gray", correctInput: true })
         this.#canvas = document.getElementById(id)
         this.#pxXY = pxXY.map(e => Math.round(e))
         this.#pxSize = pxSize
@@ -35,6 +35,7 @@ class PxS {
         this.#width = (pxSize * pxXY[0]) + ((pxXY[0] - 1) * options.grid)
         this.#height = (pxSize * pxXY[1]) + ((pxXY[1] - 1) * options.grid)
         this.#pixelsData = Array(this.#pxXY[1]).fill().map(() => Array(this.#pxXY[1]).fill(this.options.bg));
+        this.#colorDictionary = {}
         this.restart()
     }
 
@@ -82,6 +83,32 @@ class PxS {
             case 7: pointXY = [pointXY0[0] + dx, pointXY0[1] - dy]; break
         }
         return pointXY
+    }
+
+    #correctInput(inputs) {
+        let keys = Object.keys(inputs)
+        for (let i = 0; i < keys.length; i++) {
+            let input = inputs[keys[i]]
+            if (Array.isArray(input)) { inputs[keys[i]] = input.map(e => Math.round(e)) }
+            else if (!isNaN(input)) { inputs[keys[i]] = Math.round(input) }
+            else if (typeof input === 'string') {
+                if (input.toLowerCase().includes("rgb")) { inputs[keys[i]] = input.toLowerCase() }
+                else {
+                    if (this.#colorDictionary[input] !== undefined) { inputs[keys[i]] = this.#colorDictionary[input] }
+                    else {
+                        this.#ctx.fillStyle = input;
+                        this.#ctx.fillRect(this.#pxSize, 1, 1, 1)
+                        let color = this.#ctx.getImageData(this.#pxSize, 1, 1, 1).data
+                        this.#ctx.fillStyle = this.options.gridColor;
+                        this.#ctx.fillRect(this.#pxSize, 1, 1, 1)
+                        color = `rgb(${color[0]},${color[1]},${color[2]})`
+                        this.#colorDictionary[input.toLowerCase()] = color
+                        inputs[keys[i]] = color
+                    }
+                }
+            }
+        }
+        return inputs
     }
 
     #setPixelColor(pointXY, color = this.options.color, WH) {
@@ -148,7 +175,7 @@ class PxS {
         }
     }
 
-    drawPixels(pixels) {
+    drawPixels(pixels, correctInput = true) {
         let pxSize = this.#pxSize
         pixels = pixels.map(e => !isNaN(e) ? Math.round(e) : e)
         for (let i = 0; i < pixels.length; i++) {
@@ -234,5 +261,5 @@ class PxS {
 }
 
 // working area
-let PxS1 = new PxS([16, 16], 20, "PXS", { grid: 1 })
+let PxS1 = new PxS([16, 16], 20, "PxS", { grid: 1 })
 
