@@ -24,7 +24,7 @@ function movePoint(pointXY, dir, D = 1) {
 
 class PxS {
 
-    #pxXY; #pxSize; #ctx; #width; #height; #pixelsData; #canvas; #colorDictionary
+    #pxXY; #pxSize; #ctx; #width; #height; #pixelsData; #canvas; #colorDictionary; #SC
     // default options = { bg: "white" , color: "black" , grid: 0 , gridColor: "gray" , correctInput : true }
     constructor(pxXY, pxSize, id, options = { bg: "white", color: "black", grid: 0, gridColor: "Gray", correctInput: true }) {
         this.options = this.#defaultOptions(options, { bg: "white", color: "black", grid: 0, gridColor: "Gray", correctInput: true })
@@ -36,6 +36,8 @@ class PxS {
         this.#height = (pxSize * pxXY[1]) + ((pxXY[1] - 1) * options.grid)
         this.#pixelsData = Array(this.#pxXY[1]).fill().map(() => Array(this.#pxXY[1]).fill(this.options.bg));
         this.#colorDictionary = {}
+        this.#SC = document.createElement("canvas"); this.#SC.setAttribute("width", "1"); this.#SC.setAttribute("height", "1")
+        this.#SC = this.#SC.getContext("2d", { willReadFrequently: true })
         this.restart()
     }
 
@@ -96,11 +98,9 @@ class PxS {
                 else {
                     if (this.#colorDictionary[input] !== undefined) { inputs[keys[i]] = this.#colorDictionary[input] }
                     else {
-                        this.#ctx.fillStyle = input;
-                        this.#ctx.fillRect(this.#pxSize, 1, 1, 1)
-                        let color = this.#ctx.getImageData(this.#pxSize, 1, 1, 1).data
-                        this.#ctx.fillStyle = this.options.gridColor;
-                        this.#ctx.fillRect(this.#pxSize, 1, 1, 1)
+                        this.#SC.fillStyle = input;
+                        this.#SC.fillRect(0, 0, 1, 1)
+                        let color = this.#SC.getImageData(0, 0, 1, 1).data
                         color = `rgb(${color[0]},${color[1]},${color[2]})`
                         this.#colorDictionary[input.toLowerCase()] = color
                         inputs[keys[i]] = color
@@ -175,7 +175,7 @@ class PxS {
         }
     }
 
-    drawPixels(pixels, correctInput = true) {
+    drawPixels(pixels) {
         let pxSize = this.#pxSize
         pixels = pixels.map(e => !isNaN(e) ? Math.round(e) : e)
         for (let i = 0; i < pixels.length; i++) {
@@ -261,4 +261,4 @@ class PxS {
 }
 
 // working area
-let PxS1 = new PxS([16, 16], 20, "PxS", { grid: 1 })
+let PxS1 = new PxS([16, 16], 25, "PxS", { grid: 1.5 })
