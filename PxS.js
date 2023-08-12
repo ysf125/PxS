@@ -1,9 +1,9 @@
-export { PxS, movePoint }
+export { PxS, movePointGrid }
 
 function randomNum(min, max) { return Math.round(Math.random() * (max - min) + min) }
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
 function isMatrix(a) { return Array.isArray(a[0]) && typeof a[0] !== 'string' ? true : false }
-function isNegativeNum(Num) { return Math.abs(Num) !== Num ? true : false }
+function isNegativeNum(Num) { return Num < 0 ? true : false }
 function slope(pointXY0, pointXY1) { return (pointXY1[1] - pointXY0[1]) / (pointXY1[0] - pointXY0[0]) }
 function midPoint(pointXY0, pointXY1) { return [(pointXY0[0] + pointXY1[0]) / 2, ((pointXY0[1] + pointXY1[1])) / 2] }
 function distance(pointXY0, pointXY1) { return Math.sqrt((pointXY1[0] - pointXY0[0]) ** 2 + (pointXY1[1] - pointXY0[1]) ** 2) }
@@ -15,12 +15,28 @@ function ObjectCombiner(keys, values) {
     } return returnVal
 }
 
-function movePoint(pointXY, dir, D = 1) {
+function movePointGrid(pointXY, dir, D = 1) {
     let rad = (360 + 45 * dir) % 360 * (Math.PI / 180)
         , x = pointXY[0] + (D * Math.round(Math.cos(rad)))
         , y = pointXY[1] + (D * Math.round(Math.sin(rad)))
     return [x, y]
 }
+
+function movePoint(pointXY, angle, D = 1) {
+    let z = angle !== 180 || angle !== 0 ? 180 : 0,
+        rad = angle * (Math.PI / 180)
+        , x = pointXY[0] + (D * Math.cos(rad))
+        , y = pointXY[1] + (D * Math.sin((angle + z) * (Math.PI / 180)))
+    return [x, y]
+}
+
+function getAngle(pointXY0, pointXY1) {
+    let angle = Math.atan2(pointXY1[1] - pointXY0[1], pointXY1[0] - pointXY0[0])
+    if (angle < 0) { angle += Math.PI * 2 }
+    return angle * (180 / Math.PI)
+}
+
+console.log(getAngle([5, 5], [4, 4]))
 
 class PxS {
 
@@ -94,7 +110,7 @@ class PxS {
             if (Array.isArray(input)) { inputs[keys[i]] = input.map(e => Math.round(e)) }
             else if (!isNaN(input)) { inputs[keys[i]] = Math.round(input) }
             else if (typeof input === 'string') {
-                if (input.toLowerCase().includes("rgb")) { inputs[keys[i]] = input.toLowerCase() }
+                if (input.toLowerCase().includes("rgb(")) { inputs[keys[i]] = input.toLowerCase() }
                 else {
                     if (this.#colorDictionary[input] !== undefined) { inputs[keys[i]] = this.#colorDictionary[input] }
                     else {
@@ -164,7 +180,7 @@ class PxS {
         while (!arraysEqual(oldG, [])) {
             for (let i = 0; i < oldG.length; i++) {
                 for (let x = 0; x < 8; x += 2) {
-                    let newPointXY = movePoint(oldG[i], x),
+                    let newPointXY = movePointGrid(oldG[i], x),
                         pxColor = this.getPixelColor(newPointXY)
                     if (pxColor == oldColor) {
                         this.drawPixels([[...newPointXY, color]]); newG.push(newPointXY)
@@ -217,7 +233,7 @@ class PxS {
         pointXY1 = pointXY1.map(e => Math.round(e))
         function getOctet(pointXY0, pointXY1) {
             let N = 10 ** 9, closestPoint = [N, 0]
-                , points = Array(8).fill(pointXY0).map((e, i) => movePoint(e, i, N / 2))
+                , points = Array(8).fill(pointXY0).map((e, i) => movePointGrid(e, i, N / 2))
             points = points.map((e, i) => midPoint(e, points[(i + 1) % 8]))
             points.forEach((e, i) => distance(e, pointXY1) < closestPoint[0] ? closestPoint = [distance(e, pointXY1), i] : 0)
             return closestPoint[1]
