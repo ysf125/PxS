@@ -3,10 +3,14 @@ export { PxS, movePointGrid }
 function randomNum(min, max) { return Math.round(Math.random() * (max - min) + min) }
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
 function isMatrix(a) { return Array.isArray(a[0]) && typeof a[0] !== 'string' ? true : false }
-function isNegativeNum(Num) { return Num < 0 ? true : false }
 function slope(pointXY0, pointXY1) { return (pointXY1[1] - pointXY0[1]) / (pointXY1[0] - pointXY0[0]) }
 function midPoint(pointXY0, pointXY1) { return [(pointXY0[0] + pointXY1[0]) / 2, ((pointXY0[1] + pointXY1[1])) / 2] }
 function distance(pointXY0, pointXY1) { return Math.sqrt((pointXY1[0] - pointXY0[0]) ** 2 + (pointXY1[1] - pointXY0[1]) ** 2) }
+
+function changeSign(num) {
+    if (num < 0) { return num + Math.abs(num) * 2 }
+    else { return num - num * 2 }
+}
 
 function ObjectCombiner(keys, values) {
     let returnVal = {}
@@ -31,17 +35,14 @@ function movePoint(pointXY, angle, D = 1) {
 }
 
 function getAngle(pointXY0, pointXY1) {
-    let angle = Math.atan2(pointXY1[1] - pointXY0[1], pointXY1[0] - pointXY0[0])
+    let angle = Math.atan2(changeSign(pointXY1[1] - pointXY0[1]), pointXY1[0] - pointXY0[0])
     if (angle < 0) { angle += Math.PI * 2 }
     return angle * (180 / Math.PI)
 }
 
-console.log(getAngle([5, 5], [4, 4]))
-
 class PxS {
 
     #pxXY; #pxSize; #ctx; #width; #height; #pixelsData; #canvas; #colorDictionary; #SC
-    // default options = { bg: "white" , color: "black" , grid: 0 , gridColor: "gray" , correctInput : true }
     constructor(pxXY, pxSize, id, options = { bg: "white", color: "black", grid: 0, gridColor: "Gray", correctInput: true }) {
         this.options = this.#defaultOptions(options, { bg: "white", color: "black", grid: 0, gridColor: "Gray", correctInput: true })
         this.#canvas = document.getElementById(id)
@@ -170,7 +171,8 @@ class PxS {
     get allCanvesData() {
         return {
             pxXY: this.#pxXY, pxSize: this.#pxSize, canvas: this.#canvas, ctx: this.#ctx,
-            options: this.options, width: this.#width, height: this.#height, pixelsData: this.#pixelsData
+            options: this.options, width: this.#width, height: this.#height,
+            pixelsData: this.#pixelsData, colorDictionary: this.#colorDictionary
         }
     }
 
@@ -239,16 +241,7 @@ class PxS {
             return closestPoint[1]
         }
         let octetNum = getOctet(pointXY0, pointXY1)
-        pointXY1 = this.#ChangePointOctet(pointXY0, pointXY1, 0)
-
-        let dx = pointXY1[0] - pointXY0[0], dy = pointXY1[1] - pointXY0[1],
-            D = 2 * dy - dx, dD = 2 * (dy - dx),
-            x = pointXY0[0], y = pointXY0[1]
-        while (x <= pointXY1[0]) {
-            this.drawPixels([[...this.#ChangePointOctet(pointXY0, [x, y], octetNum), color]])
-            x++
-            if (D < 0) { D = D + 2 * dy } else if (D >= 0) { y++; D = D + dD }
-        }
+        //working here
     }
 
     drawCircle(pointXY, R, color = this.options.color, fill = false) {
@@ -278,3 +271,4 @@ class PxS {
 
 // working area
 let PxS1 = new PxS([16, 16], 25, "PxS", { grid: 1.5 })
+
