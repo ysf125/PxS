@@ -4,7 +4,7 @@ function randomNum(min, max) { return Math.round(Math.random() * (max - min) + m
 function arraysEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b) ? true : false }
 function isMatrix(a) { return Array.isArray(a[0]) && typeof a[0] !== 'string' ? true : false }
 function slope(pointXY0, pointXY1) { return (pointXY1[1] - pointXY0[1]) / (pointXY1[0] - pointXY0[0]) }
-function midPoint(pointXY0, pointXY1) { return [(pointXY0[0] + pointXY1[0]) / 2, ((pointXY0[1] + pointXY1[1])) / 2] }
+function midPoint(pointXY0, pointXY1) { return [(pointXY0[0] + pointXY1[0]) / 2, (pointXY0[1] + pointXY1[1]) / 2] }
 function distance(pointXY0, pointXY1) { return Math.sqrt((pointXY1[0] - pointXY0[0]) ** 2 + (pointXY1[1] - pointXY0[1]) ** 2) }
 
 function changeSign(num) {
@@ -240,8 +240,10 @@ class PxS {
             points.forEach((e, i) => distance(e, pointXY1) < closestPoint[0] ? closestPoint = [distance(e, pointXY1), i] : 0)
             return closestPoint[1]
         }
-        let octetNum = getOctet(pointXY0, pointXY1)
-        //working here
+        let octetNum = getOctet(pointXY0, pointXY1),
+            midLine = midPoint(pointXY0, pointXY1), angel = getAngle(pointXY0, pointXY1),
+            BPoint0 = movePoint(midLine, angel + 90, 64), BPoint1 = movePoint(midLine, angel - 90, 64)
+        
     }
 
     drawCircle(pointXY, R, color = this.options.color, fill = false) {
@@ -272,3 +274,4 @@ class PxS {
 // working area
 let PxS1 = new PxS([16, 16], 25, "PxS", { grid: 1.5 })
 
+PxS1.drawLine([3, 3], [9, 5])
