@@ -240,10 +240,15 @@ class PxS {
             points.forEach((e, i) => distance(e, pointXY1) < closestPoint[0] ? closestPoint = [distance(e, pointXY1), i] : 0)
             return closestPoint[1]
         }
-        let octetNum = getOctet(pointXY0, pointXY1),
+        let octetNum = getOctet(pointXY0, pointXY1), closestPoint = [...pointXY0, distance(pointXY0, pointXY1) + 10],
             midLine = midPoint(pointXY0, pointXY1), angel = getAngle(pointXY0, pointXY1),
             BPoint0 = movePoint(midLine, angel + 90, 64), BPoint1 = movePoint(midLine, angel - 90, 64)
-        
+        //while (closestPoint[2] !== 0) {
+            for (let i = 0; i < 3; i++) {
+                let point = movePointGrid([closestPoint[0], closestPoint[1]], i + octetNum)
+                
+            }
+        //}
     }
 
     drawCircle(pointXY, R, color = this.options.color, fill = false) {
