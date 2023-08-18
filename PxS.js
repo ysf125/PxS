@@ -233,8 +233,8 @@ class PxS {
     drawLine(pointXY0, pointXY1, color = this.options.color) {
         pointXY0 = pointXY0.map(e => Math.round(e))
         pointXY1 = pointXY1.map(e => Math.round(e))
-        let getOctet = (pointXY0, pointXY1) => Math.round((360 - getAngle(pointXY0, pointXY1)) / 45)
-        let midLinePoint = midPoint(pointXY0, pointXY1), angle = getAngle(pointXY0, pointXY1),
+        let getOctet = (pointXY0, pointXY1) => Math.round((360 - getAngle(pointXY0, pointXY1)) / 45),
+            midLinePoint = midPoint(pointXY0, pointXY1), angle = getAngle(pointXY0, pointXY1),
             BPoint0 = movePoint(midLinePoint, angle - 90, 64), BPoint1 = movePoint(midLinePoint, angle + 90, 64),
             closestPoint = [pointXY0, distance(pointXY0, pointXY1) + 10]
         while (false) {
