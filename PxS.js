@@ -6,11 +6,8 @@ function isMatrix(a) { return Array.isArray(a[0]) && typeof a[0] !== 'string' ? 
 function slope(pointXY0, pointXY1) { return (pointXY1[1] - pointXY0[1]) / (pointXY1[0] - pointXY0[0]) }
 function midPoint(pointXY0, pointXY1) { return [(pointXY0[0] + pointXY1[0]) / 2, (pointXY0[1] + pointXY1[1]) / 2] }
 function distance(pointXY0, pointXY1) { return Math.sqrt((pointXY1[0] - pointXY0[0]) ** 2 + (pointXY1[1] - pointXY0[1]) ** 2) }
-
-function changeSign(num) {
-    if (num < 0) { return num + Math.abs(num) * 2 }
-    else { return num - num * 2 }
-}
+function getOctet(pointXY0, pointXY1) { return Math.floor((360 - getAngle(pointXY0, pointXY1)) / 45) }
+function changeSign(num) { if (num < 0) { return num + Math.abs(num) * 2 } else { return num - num * 2 } }
 
 function ObjectCombiner(keys, values) {
     let returnVal = {}
@@ -233,14 +230,15 @@ class PxS {
     drawLine(pointXY0, pointXY1, color = this.options.color) {
         pointXY0 = pointXY0.map(e => Math.round(e))
         pointXY1 = pointXY1.map(e => Math.round(e))
-        let getOctet = (pointXY0, pointXY1) => Math.round((360 - getAngle(pointXY0, pointXY1)) / 45),
-            midLinePoint = midPoint(pointXY0, pointXY1), angle = getAngle(pointXY0, pointXY1),
-            BPoint0 = movePoint(midLinePoint, angle - 90, 64), BPoint1 = movePoint(midLinePoint, angle + 90, 64),
-            closestPoint = [pointXY0, distance(pointXY0, pointXY1) + 10]
-        while (false) {
-            for (let i = 0; i < 3; i++) {
-                
-            }
+        let octetNum = getOctet(pointXY0, pointXY1),
+            angle = getAngle(pointXY0, pointXY1), point = [...pointXY0]
+        this.drawPixels([pointXY0, pointXY1])
+        while (distance(point, pointXY1) > 2) {
+            let NPoint0 = movePointGrid(point, octetNum), NPoint1 = movePointGrid(point, octetNum + 1),
+                NP0 = getAngle(NPoint0, pointXY1), NP1 = getAngle(NPoint1, pointXY1)
+            NP0 = Math.abs(angle - NP0); NP1 = Math.abs(angle - NP1)
+            if (NP0 <= NP1) { point = NPoint0 } else { point = NPoint1 }
+            this.drawPixels([point])
         }
     }
 
@@ -272,4 +270,6 @@ class PxS {
 // working area
 let PxS1 = new PxS([16, 16], 16, "PxS", { grid: 1.5 })
 
-PxS1.drawLine([3, 3], [1, 10])
+console.time("time ")
+PxS1.drawLine([3, 3], [0, 9])
+console.timeEnd("time ")
