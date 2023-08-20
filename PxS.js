@@ -40,8 +40,8 @@ function getAngle(pointXY0, pointXY1) {
 class PxS {
 
     #pxXY; #pxSize; #ctx; #width; #height; #pixelsData; #canvas; #colorDictionary; #SC
-    constructor(pxXY, pxSize, id, options = { bg: "white", color: "black", grid: 0, gridColor: "Gray", correctInput: true }) {
-        this.options = this.#defaultOptions(options, { bg: "white", color: "black", grid: 0, gridColor: "Gray", correctInput: true })
+    constructor(pxXY, pxSize, id, options = { bg: "", color: "", grid: 0, gridColor: "", correctInput: true }) {
+        this.options = this.#defaultOptions(options, { bg: "rgb(255,255,255)", color: "rgb(0,0,0)", grid: 0, gridColor: "rgb(128,128,128)", correctInput: true })
         this.#canvas = document.getElementById(id)
         this.#pxXY = pxXY.map(e => Math.round(e))
         this.#pxSize = pxSize
@@ -191,14 +191,13 @@ class PxS {
     }
 
     drawPixels(pixels) {
-        let pxSize = this.#pxSize
-        pixels = pixels.map(e => !isNaN(e) ? Math.round(e) : e)
         for (let i = 0; i < pixels.length; i++) {
-            let xy = this.#getPos(pixels[i]),
-                color = pixels[i][2] !== undefined ? pixels[i][2] : this.options.color
-            this.#ctx.fillStyle = color
-            this.#ctx.fillRect(xy[0], xy[1], pxSize, pxSize)
-            this.#setPixelColor([pixels[i][0], pixels[i][1]], color)
+            let color = pixels[i][2] !== undefined ? pixels[i][2] : this.options.color,
+            I = this.#correctInput({pointXY : [pixels[i][0], pixels[i][1]] , color : color}), 
+            XYPos = this.#getPos(I.pointXY)
+            this.#ctx.fillStyle = I.color
+            this.#ctx.fillRect(XYPos[0], XYPos[1], this.#pxSize, this.#pxSize)
+            this.#setPixelColor(I.pointXY, I.color)
         }
     }
 
@@ -233,7 +232,7 @@ class PxS {
         let octetNum = getOctet(pointXY0, pointXY1),
             angle = getAngle(pointXY0, pointXY1), point = [...pointXY0]
         this.drawPixels([pointXY0, pointXY1])
-        while (distance(point, pointXY1) > 2) {
+        while (distance(point, pointXY1) > 1.42) {
             let NPoint0 = movePointGrid(point, octetNum), NPoint1 = movePointGrid(point, octetNum + 1),
                 NP0 = getAngle(NPoint0, pointXY1), NP1 = getAngle(NPoint1, pointXY1)
             NP0 = Math.abs(angle - NP0); NP1 = Math.abs(angle - NP1)
@@ -243,11 +242,11 @@ class PxS {
     }
 
     drawCircle(pointXY, R, color = this.options.color, fill = false) {
-        pointXY = pointXY.map(e => Math.round(e)); R = Math.round(R)
-        let x = 0, y = R, p = 1 - R
+        let I = this.#correctInput({pointXY : pointXY , R : R , color : color})
+        let x = 0, y = I.R, p = 1 - I.R
         for (let i = 0; i < 8; i++) {
-            let point = this.#ChangePointOctet(pointXY, [x + pointXY[0], y + pointXY[1]], i)
-            this.drawPixels([[point[0], point[1], color]])
+            let point = this.#ChangePointOctet(I.pointXY, [x + I.pointXY[0], y + I.pointXY[1]], i)
+            this.drawPixels([[point[0], point[1], I.color]])
         }
         while (x <= y) {
             x += 1
@@ -258,18 +257,15 @@ class PxS {
                 p = p - 2 * y + 2 * x + 1
             }
             for (let i = 0; i < 8; i++) {
-                let point = this.#ChangePointOctet(pointXY, [x + pointXY[0], y + pointXY[1]], i)
-                this.drawPixels([[point[0], point[1], color]])
+                let point = this.#ChangePointOctet(I.pointXY, [x + I.pointXY[0], y + I.pointXY[1]], i)
+                this.drawPixels([[point[0], point[1], I.color]])
             }
         }
-        fill == true ? this.floodFill(pointXY, color) : 0
+        fill == true ? this.floodFill(I.pointXY, I.color) : 0
     }
 
 }
 
 // working area
-let PxS1 = new PxS([16, 16], 16, "PxS", { grid: 1.5 })
-
-console.time("time ")
-PxS1.drawLine([3, 3], [0, 9])
-console.timeEnd("time ")
+let PxS1 = new PxS([32, 32], 8, "PxS", { grid: 1 })
+// add correctInput(M) to { floodFill , drawRect , drawLine , getPixelColor }
