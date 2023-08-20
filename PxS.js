@@ -62,6 +62,11 @@ class PxS {
         return [x, y]
     }
 
+    #outSide(pointXY, WH) {
+        if (pointXY[0] < 0 || pointXY[1] < 0 || pointXY[0] >= WH[0] || pointXY[1] >= WH[1]) {
+            return true } else { return false }
+    }
+
     #defaultOptions(options, defaultOptions) {
         let keys = Object.keys(defaultOptions)
         for (let i = 0; i < keys.length; i++) {
@@ -126,17 +131,13 @@ class PxS {
     }
 
     #setPixelColor(pointXY, color = this.options.color, WH) {
-        let outSide = function (pointXY, WH) {
-            if (pointXY[0] < 0 || pointXY[1] < 0 ||
-                pointXY[0] >= WH[0] || pointXY[1] >= WH[1]) { return true } else { return false }
-        }
         if (WH == undefined) {
-            if (outSide(pointXY, this.#pxXY)) { return }
+            if (this.#outSide(pointXY, this.#pxXY)) { return }
             this.#pixelsData[pointXY[1]][pointXY[0]] = color
         } else {
             for (let y = 0; y < WH[1]; y++) {
                 for (let x = 0; x < WH[0]; x++) {
-                    if (outSide([pointXY[0] + x, pointXY[1] + y], this.#pxXY)) { continue }
+                    if (this.#outSide([pointXY[0] + x, pointXY[1] + y], this.#pxXY)) { continue }
                     this.#pixelsData[pointXY[1] + y][pointXY[0] + x] = color
                 }
             }
@@ -144,13 +145,16 @@ class PxS {
     }
 
     getPixelColor(pointXY, WH) {
-        if (WH == undefined) {
-            return this.#pixelsData[pointXY[1]][pointXY[0]]
+        let In = this.#correctInput({pointXY : pointXY , WH : WH})
+        if (In.WH == undefined) {
+            if (this.#outSide(pointXY , this.#pxXY)) { return }
+            return this.#pixelsData[In.pointXY[1]][In.pointXY[0]]
         } else {
-            let pixels = Array(WH[1]).fill().map(() => Array(WH[0]).fill())
-            for (let y = 0; y < WH[1]; y++) {
-                for (let x = 0; x < WH[0]; x++) {
-                    pixels[y][x] = this.#pixelsData[pointXY[1] + y][pointXY[0] + x]
+            let pixels = Array(In.WH[1]).fill().map(() => Array(In.WH[0]).fill())
+            for (let y = 0; y < In.WH[1]; y++) {
+                for (let x = 0; x < In.WH[0]; x++) {
+                    if (this.#outSide([In.pointXY[0] + x , In.pointXY[1] + y] , this.#pxXY)) { continue }
+                    pixels[y][x] = this.#pixelsData[In.pointXY[1] + y][In.pointXY[0] + x]
                 }
             }
             return pixels
@@ -174,15 +178,16 @@ class PxS {
     }
 
     floodFill(pointXY, color = this.options.color) {
-        pointXY = pointXY.map(e => Math.round(e))
-        let oldG = [pointXY], newG = [], oldColor = this.getPixelColor(pointXY)
+        let In = this.#correctInput({pointXY : pointXY , color : color }),
+            oldG = [In.pointXY], newG = [], oldColor = this.getPixelColor(In.pointXY)
         while (!arraysEqual(oldG, [])) {
             for (let i = 0; i < oldG.length; i++) {
                 for (let x = 0; x < 8; x += 2) {
                     let newPointXY = movePointGrid(oldG[i], x),
                         pxColor = this.getPixelColor(newPointXY)
                     if (pxColor == oldColor) {
-                        this.drawPixels([[...newPointXY, color]]); newG.push(newPointXY)
+                        this.drawPixels([[...newPointXY, In.color]], false)
+                        newG.push(newPointXY)
                     }
                 }
             }
@@ -190,63 +195,62 @@ class PxS {
         }
     }
 
-    drawPixels(pixels) {
+    drawPixels(pixels, correctTheInput = true) {
         for (let i = 0; i < pixels.length; i++) {
             let color = pixels[i][2] !== undefined ? pixels[i][2] : this.options.color,
-            I = this.#correctInput({pointXY : [pixels[i][0], pixels[i][1]] , color : color}), 
-            XYPos = this.#getPos(I.pointXY)
-            this.#ctx.fillStyle = I.color
+                In = { pointXY: [pixels[i][0], pixels[i][1]], color: color }
+            if (correctTheInput) { In = this.#correctInput({ pointXY: [pixels[i][0], pixels[i][1]], color: color }) }
+            let XYPos = this.#getPos(In.pointXY)
+            this.#ctx.fillStyle = In.color
             this.#ctx.fillRect(XYPos[0], XYPos[1], this.#pxSize, this.#pxSize)
-            this.#setPixelColor(I.pointXY, I.color)
+            this.#setPixelColor(In.pointXY, In.color)
         }
     }
 
     drawRect(pointXY, WH, color = this.options.color, fill = false) {
-        pointXY = pointXY.map(e => Math.round(e))
-        WH = WH.map(e => Math.round(e))
-        if (WH[0] < 0 || WH[1] < 0) {
-            if (WH[0] < 0) { pointXY[0] = pointXY[0] + (WH[0] + 1) }
-            if (WH[1] < 0) { pointXY[1] = pointXY[1] + (WH[1] + 1) }
-            WH = WH.map(e => Math.abs(e))
+        let In = this.#correctInput({ pointXY: pointXY, WH: WH, color: color })
+        if (In.WH[0] < 0 || In.WH[1] < 0) {
+            if (In.WH[0] < 0) { In.pointXY[0] = In.pointXY[0] + (In.WH[0] + 1) }
+            if (In.WH[1] < 0) { In.pointXY[1] = In.pointXY[1] + (In.WH[1] + 1) }
+            In.WH = In.WH.map(e => Math.abs(e))
         }
         if (fill == true) {
             let grid = this.options.grid
-                , xy = this.#getPos(pointXY)
-                , z = grid !== 0 ? [(grid * WH[0] - grid), (grid * WH[1] - grid)] : [0, 0]
+                , xy = this.#getPos(In.pointXY)
+                , z = grid !== 0 ? [(grid * In.WH[0] - grid), (grid * In.WH[1] - grid)] : [0, 0]
                 , pxSize = this.#pxSize;
-            this.#ctx.fillStyle = color
-            this.#ctx.fillRect(xy[0], xy[1], WH[0] * pxSize + z[0], WH[1] * pxSize + z[1])
-            grid !== 0 ? this.#drawGrid(pointXY, [pointXY[0] + WH[0], pointXY[1] + WH[1]]) : 0
-            this.#setPixelColor(pointXY, color, WH)
+            this.#ctx.fillStyle = In.color
+            this.#ctx.fillRect(xy[0], xy[1], In.WH[0] * pxSize + z[0], In.WH[1] * pxSize + z[1])
+            grid !== 0 ? this.#drawGrid(In.pointXY, [In.pointXY[0] + In.WH[0], In.pointXY[1] + In.WH[1]]) : 0
+            this.#setPixelColor(In.pointXY, In.color, In.WH)
         } else {
-            this.drawRect(pointXY, [WH[0], 1], color, true)
-            this.drawRect(pointXY, [1, WH[1]], color, true)
-            this.drawRect([pointXY[0], pointXY[1] + WH[1] - 1], [WH[0], 1], color, true)
-            this.drawRect([pointXY[0] + WH[0] - 1, pointXY[1]], [1, WH[1]], color, true)
+            this.drawRect(In.pointXY, [In.WH[0], 1], In.color, true)
+            this.drawRect(In.pointXY, [1, In.WH[1]], In.color, true)
+            this.drawRect([In.pointXY[0], In.pointXY[1] + In.WH[1] - 1], [In.WH[0], 1], In.color, true)
+            this.drawRect([In.pointXY[0] + In.WH[0] - 1, In.pointXY[1]], [1, In.WH[1]], In.color, true)
         }
     }
 
     drawLine(pointXY0, pointXY1, color = this.options.color) {
-        pointXY0 = pointXY0.map(e => Math.round(e))
-        pointXY1 = pointXY1.map(e => Math.round(e))
-        let octetNum = getOctet(pointXY0, pointXY1),
-            angle = getAngle(pointXY0, pointXY1), point = [...pointXY0]
-        this.drawPixels([pointXY0, pointXY1])
-        while (distance(point, pointXY1) > 1.42) {
+        let In = this.#correctInput({ pointXY0: pointXY0, pointXY1: pointXY1, color: color }),
+            octetNum = getOctet(In.pointXY0, In.pointXY1),
+            angle = getAngle(In.pointXY0, In.pointXY1), point = [...In.pointXY0]
+        this.drawPixels([[...In.pointXY0, In.color], [...In.pointXY1, In.color]], false)
+        while (distance(point, In.pointXY1) > 1.42) {
             let NPoint0 = movePointGrid(point, octetNum), NPoint1 = movePointGrid(point, octetNum + 1),
-                NP0 = getAngle(NPoint0, pointXY1), NP1 = getAngle(NPoint1, pointXY1)
+                NP0 = getAngle(NPoint0, In.pointXY1), NP1 = getAngle(NPoint1, In.pointXY1)
             NP0 = Math.abs(angle - NP0); NP1 = Math.abs(angle - NP1)
             if (NP0 <= NP1) { point = NPoint0 } else { point = NPoint1 }
-            this.drawPixels([point])
+            this.drawPixels([[...point, In.color]], false)
         }
     }
 
     drawCircle(pointXY, R, color = this.options.color, fill = false) {
-        let I = this.#correctInput({pointXY : pointXY , R : R , color : color})
-        let x = 0, y = I.R, p = 1 - I.R
+        let In = this.#correctInput({ pointXY: pointXY, R: R, color: color }),
+            x = 0, y = In.R, p = 1 - In.R
         for (let i = 0; i < 8; i++) {
-            let point = this.#ChangePointOctet(I.pointXY, [x + I.pointXY[0], y + I.pointXY[1]], i)
-            this.drawPixels([[point[0], point[1], I.color]])
+            let point = this.#ChangePointOctet(In.pointXY, [x + In.pointXY[0], y + In.pointXY[1]], i)
+            this.drawPixels([[point[0], point[1], In.color]], false)
         }
         while (x <= y) {
             x += 1
@@ -257,15 +261,15 @@ class PxS {
                 p = p - 2 * y + 2 * x + 1
             }
             for (let i = 0; i < 8; i++) {
-                let point = this.#ChangePointOctet(I.pointXY, [x + I.pointXY[0], y + I.pointXY[1]], i)
-                this.drawPixels([[point[0], point[1], I.color]])
+                let point = this.#ChangePointOctet(In.pointXY, [x + In.pointXY[0], y + In.pointXY[1]], i)
+                this.drawPixels([[point[0], point[1], In.color]], false)
             }
         }
-        fill == true ? this.floodFill(I.pointXY, I.color) : 0
+        fill == true ? this.floodFill(In.pointXY, In.color) : 0
     }
 
 }
 
 // working area
 let PxS1 = new PxS([32, 32], 8, "PxS", { grid: 1 })
-// add correctInput(M) to { floodFill , drawRect , drawLine , getPixelColor }
+
