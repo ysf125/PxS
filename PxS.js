@@ -64,7 +64,8 @@ class PxS {
 
     #outSide(pointXY, WH) {
         if (pointXY[0] < 0 || pointXY[1] < 0 || pointXY[0] >= WH[0] || pointXY[1] >= WH[1]) {
-            return true } else { return false }
+            return true
+        } else { return false }
     }
 
     #defaultOptions(options, defaultOptions) {
@@ -106,28 +107,30 @@ class PxS {
         return pointXY
     }
 
-    #correctInput(inputs) {
-        let keys = Object.keys(inputs)
-        for (let i = 0; i < keys.length; i++) {
-            let input = inputs[keys[i]]
-            if (Array.isArray(input)) { inputs[keys[i]] = input.map(e => Math.round(e)) }
-            else if (!isNaN(input)) { inputs[keys[i]] = Math.round(input) }
-            else if (typeof input === 'string') {
-                if (input.toLowerCase().includes("rgb(")) { inputs[keys[i]] = input.toLowerCase() }
-                else {
-                    if (this.#colorDictionary[input] !== undefined) { inputs[keys[i]] = this.#colorDictionary[input] }
+    #correctInput(inputs, on = this.#correctInput) {
+        if (on) {
+            let keys = Object.keys(inputs)
+            for (let i = 0; i < keys.length; i++) {
+                let input = inputs[keys[i]]
+                if (Array.isArray(input)) { inputs[keys[i]] = input.map(e => Math.round(e)) }
+                else if (!isNaN(input)) { inputs[keys[i]] = Math.round(input) }
+                else if (typeof input === 'string') {
+                    if (input.toLowerCase().includes("rgb(")) { inputs[keys[i]] = input.toLowerCase() }
                     else {
-                        this.#SC.fillStyle = input;
-                        this.#SC.fillRect(0, 0, 1, 1)
-                        let color = this.#SC.getImageData(0, 0, 1, 1).data
-                        color = `rgb(${color[0]},${color[1]},${color[2]})`
-                        this.#colorDictionary[input.toLowerCase()] = color
-                        inputs[keys[i]] = color
+                        if (this.#colorDictionary[input] !== undefined) { inputs[keys[i]] = this.#colorDictionary[input] }
+                        else {
+                            this.#SC.fillStyle = input;
+                            this.#SC.fillRect(0, 0, 1, 1)
+                            let color = this.#SC.getImageData(0, 0, 1, 1).data
+                            color = `rgb(${color[0]},${color[1]},${color[2]})`
+                            this.#colorDictionary[input.toLowerCase()] = color
+                            inputs[keys[i]] = color
+                        }
                     }
                 }
             }
-        }
-        return inputs
+            return inputs
+        } else { return inputs }
     }
 
     #setPixelColor(pointXY, color = this.options.color, WH) {
@@ -145,15 +148,15 @@ class PxS {
     }
 
     getPixelColor(pointXY, WH) {
-        let In = this.#correctInput({pointXY : pointXY , WH : WH})
+        let In = this.#correctInput({ pointXY: pointXY, WH: WH })
         if (In.WH == undefined) {
-            if (this.#outSide(pointXY , this.#pxXY)) { return }
+            if (this.#outSide(pointXY, this.#pxXY)) { return }
             return this.#pixelsData[In.pointXY[1]][In.pointXY[0]]
         } else {
             let pixels = Array(In.WH[1]).fill().map(() => Array(In.WH[0]).fill())
             for (let y = 0; y < In.WH[1]; y++) {
                 for (let x = 0; x < In.WH[0]; x++) {
-                    if (this.#outSide([In.pointXY[0] + x , In.pointXY[1] + y] , this.#pxXY)) { continue }
+                    if (this.#outSide([In.pointXY[0] + x, In.pointXY[1] + y], this.#pxXY)) { continue }
                     pixels[y][x] = this.#pixelsData[In.pointXY[1] + y][In.pointXY[0] + x]
                 }
             }
@@ -178,7 +181,7 @@ class PxS {
     }
 
     floodFill(pointXY, color = this.options.color) {
-        let In = this.#correctInput({pointXY : pointXY , color : color }),
+        let In = this.#correctInput({ pointXY: pointXY, color: color }),
             oldG = [In.pointXY], newG = [], oldColor = this.getPixelColor(In.pointXY)
         while (!arraysEqual(oldG, [])) {
             for (let i = 0; i < oldG.length; i++) {
@@ -195,12 +198,11 @@ class PxS {
         }
     }
 
-    drawPixels(pixels, correctTheInput = true) {
+    drawPixels(pixels, correctInput = true) {
         for (let i = 0; i < pixels.length; i++) {
             let color = pixels[i][2] !== undefined ? pixels[i][2] : this.options.color,
-                In = { pointXY: [pixels[i][0], pixels[i][1]], color: color }
-            if (correctTheInput) { In = this.#correctInput({ pointXY: [pixels[i][0], pixels[i][1]], color: color }) }
-            let XYPos = this.#getPos(In.pointXY)
+                In = this.#correctInput({ pointXY: [pixels[i][0], pixels[i][1]], color: color }, correctInput),
+                XYPos = this.#getPos(In.pointXY)
             this.#ctx.fillStyle = In.color
             this.#ctx.fillRect(XYPos[0], XYPos[1], this.#pxSize, this.#pxSize)
             this.#setPixelColor(In.pointXY, In.color)
@@ -271,5 +273,4 @@ class PxS {
 }
 
 // working area
-let PxS1 = new PxS([32, 32], 8, "PxS", { grid: 1 })
-
+let PxS1 = new PxS([32, 32], 12, "PxS", { grid: 1 })
