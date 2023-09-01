@@ -280,4 +280,3 @@ class PxS {
 }
 
 // working area
-let PxS1 = new PxS([32, 32], 12, "PxS", { grid: 1, correctInput: false })
