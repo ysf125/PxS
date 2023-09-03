@@ -17,21 +17,25 @@ body {
 }
 
 .outSide,
-.inputs {
+.input {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.inputs{
-    margin : 10px;
+.outSide{
+    margin: 15px;
 }
 
-.inputText {
-    width: 300px;
-    height: 30px;
+.PxS{
+    display: none;
+}
+
+.textInput {
+    width: 400px;
+    height: 200px;
     border-radius: 15px;
     font-size: 15px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif ;
-    padding-left: 10px;
+    padding: 10px;
 }

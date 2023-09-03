@@ -11,19 +11,29 @@
 <body id="body">
 
     <h1 class="hone">pixel screen test</h1>
-    
-    <div class="inputs">
-        <input type="text" name="" id="text" class="inputText">
-    </div>
-    
+
     <div class="outSide">
         <canvas id="PxS" class="PxS"></canvas>
+    </div>
+
+    <div class="input">
+        <textarea id="textInput" class="textInput">
+let PxS0 = new PxS( [16,16] , 20 , "PxS" )
+        </textarea>
     </div>
 
     <script src="PxS.js" type="module"></script>
     <script type="module">
         import { PxS } from "/PxS.js";
-        
+
+        document.addEventListener('keydown', function (event) {
+            if (event.code == "Enter") {
+                document.getElementById("PxS").style.display = "inline"
+                let textInput = document.getElementById("textInput").value
+                eval(textInput)
+            }
+        })
+
     </script>
 </body>
 

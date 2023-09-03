@@ -40,7 +40,7 @@ function getAngle(pointXY0, pointXY1) {
 class PxS {
 
     #pxXY; #pxSize; #ctx; #width; #height; #pixelsData; #canvas; #colorDictionary; #SC
-    constructor(pxXY, pxSize, id, options = { bg: "", color: "", grid: 0, gridColor: "", correctInput: true }) {
+    constructor(pxXY, pxSize, id, options = { bg : undefined, color : undefined, grid : undefined, gridColor : undefined, correctInput : undefined}) {
         this.options = this.#defaultOptions(options, { bg: "rgb(255,255,255)", color: "rgb(0,0,0)", grid: 0, gridColor: "rgb(128,128,128)", correctInput: true })
         this.#canvas = document.getElementById(id)
         this.#pxXY = pxXY.map(e => Math.round(e))
@@ -150,12 +150,9 @@ class PxS {
         }
     }
 
-    getPixelColor(pointXY, WH = [1,1]) {
+    getPixelColor(pointXY, WH = [1, 1]) {
         let In = this.#correctInput({ pointXY: pointXY, WH: WH })
-        if (!Number.isInteger(WH[0]) || !Number.isInteger(WH[1])) {
-            throw new Error(`you can't use floating numbers in WH = [${WH}]`)
-        } else if (WH[0] < 0 || WH[1] < 0) { throw new Error(`you can't use negative numbers in WH = [${WH}]`) }
-        if (arraysEqual(In.WH , [1,1])) {
+        if (arraysEqual(In.WH, [1, 1])) {
             if (this.#wrongInput(pointXY, this.#pxXY)) { return }
             return this.#pixelsData[In.pointXY[1]][In.pointXY[0]]
         } else {
